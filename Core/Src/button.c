@@ -26,16 +26,38 @@ static uint16_t counterForButtonPress1s[NO_OF_BUTTONS] = {0, 0, 0, 0};
 //FUNCTION IMPLEMENTATIONS
 
 void button_reading(void) {
-    // TODO: Viết logic đọc nút nhấn, xử lý bộ đệm debounceButtonBuffer1 và debounceButtonBuffer2
-    // TODO: Xử lý tăng counterForButtonPress1s và bật flagForButtonPress1s khi đủ thời gian
+    for (uint8_t i = 0; i < NO_OF_BUTTONS; i++) {
+        debounceButtonBuffer2[i] = debounceButtonBuffer1[i];
+        debounceButtonBuffer1[i] = HAL_GPIO_ReadPin(button_ports[i], button_pins[i]);
+
+        if (debounceButtonBuffer1[i] == debounceButtonBuffer2[i]) {
+            buttonBuffer[i] = debounceButtonBuffer1[i];
+
+            if (buttonBuffer[i] == BUTTON_IS_PRESSED) {
+                if (counterForButtonPress1s[i] < DURATION_FOR_AUTO_INCREASING) {
+                    counterForButtonPress1s[i]++;
+                } else {
+                    flagForButtonPress1s[i] = 1;
+                }
+            } else {
+                counterForButtonPress1s[i] = 0;
+                flagForButtonPress1s[i] = 0;
+            }
+        }
+    }
 }
 
 unsigned char is_button_pressed(uint8_t index) {
-    // TODO: Kiểm tra buttonBuffer và trả về 1 nếu nút được nhấn
-    return 0;
+    if (index >= NO_OF_BUTTONS) return 0;
+    return (buttonBuffer[index] == BUTTON_IS_PRESSED) ? 1 : 0;
 }
 
 unsigned char is_button_pressed_1s(uint8_t index) {
-    // TODO: Kiểm tra flagForButtonPress1s, xóa cờ và trả về kết quả
+    if (index >= NO_OF_BUTTONS) return 0;
+
+    if (flagForButtonPress1s[index] == 1) {
+        flagForButtonPress1s[index] = 0;   
+        return 1;
+    }
     return 0;
 }
