@@ -1,18 +1,27 @@
+
 #include "traffic_light.h"
 
-//FUNCTION IMPLEMENTATIONS
-
-void traffic_light_init(void) {
-    // TODO: Gọi hàm traffic_set để tắt đèn (LIGHT_OFF) cho cả tuyến 1 và tuyến 2 lúc khởi động
+void traffic_light_init(void)
+{
+    // Tắt đèn cho cả tuyến 1 và tuyến 2 lúc khởi động
+    traffic_set(1, LIGHT_OFF);
+    traffic_set(2, LIGHT_OFF);
 }
 
-void traffic_set(int line, int color) {
-    // TODO: Tách bit của biến 'color' (bit 1 cho tín hiệu A, bit 0 cho tín hiệu B)
+void traffic_set(int line, int color)
+{
+    // Tách bit của biến 'color' (bit 1 cho tín hiệu A, bit 0 cho tín hiệu B)
+    GPIO_PinState bit_A = ((color >> 1) & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET;
+    GPIO_PinState bit_B = (color & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET;
 
-    if (line == 1) {
-        // TODO: Dùng HAL_GPIO_WritePin xuất tín hiệu ra chân TL1_A_Pin và TL1_B_Pin
+    if (line == 1)
+    {
+        HAL_GPIO_WritePin(TL1_A_GPIO_Port, TL1_A_Pin, bit_A);
+        HAL_GPIO_WritePin(TL1_B_GPIO_Port, TL1_B_Pin, bit_B);
     }
-    else if (line == 2) {
-        // TODO: Dùng HAL_GPIO_WritePin xuất tín hiệu ra chân TL2_A_Pin và TL2_B_Pin
+    else if (line == 2)
+    {
+        HAL_GPIO_WritePin(TL2_A_GPIO_Port, TL2_A_Pin, bit_A);
+        HAL_GPIO_WritePin(TL2_B_GPIO_Port, TL2_B_Pin, bit_B);
     }
 }
