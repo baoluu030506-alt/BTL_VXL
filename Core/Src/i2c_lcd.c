@@ -1,3 +1,7 @@
+#define LCD_BACKLIGHT 0x08
+#define LCD_EN        0x04
+#define LCD_RS        0x01
+
 #include "i2c_lcd.h"
 
 // EXTERNAL VARIABLES
@@ -8,25 +12,64 @@ extern I2C_HandleTypeDef hi2c1;
 //FUNCTION IMPLEMENTATIONS
 
 void lcd_send_cmd(char cmd) {
-    // TODO: Viết logic tách byte và gửi lệnh command qua I2C đến địa chỉ LCD_I2C_ADDR
+    uint8_t data_u = (cmd & 0xF0);          
+    uint8_t data_l = ((cmd << 4) & 0xF0);   
+    uint8_t data_t[4];
+
+    data_t[0] = data_u | LCD_BACKLIGHT | LCD_EN;
+    data_t[1] = data_u | LCD_BACKLIGHT;
+    data_t[2] = data_l | LCD_BACKLIGHT | LCD_EN;
+    data_t[3] = data_l | LCD_BACKLIGHT;
+
+    HAL_I2C_Master_Transmit(&hi2c1, LCD_I2C_ADDR, data_t, 4, 100);
 }
 
 void lcd_send_data(char data) {
-    // TODO: Viết logic tách byte và gửi dữ liệu ký tự qua I2C đến địa chỉ LCD_I2C_ADDR
+    uint8_t data_u = (data & 0xF0);
+    uint8_t data_l = ((data << 4) & 0xF0);
+    uint8_t data_t[4];
+
+    data_t[0] = data_u | LCD_BACKLIGHT | LCD_EN | LCD_RS;
+    data_t[1] = data_u | LCD_BACKLIGHT | LCD_RS;
+    data_t[2] = data_l | LCD_BACKLIGHT | LCD_EN | LCD_RS;
+    data_t[3] = data_l | LCD_BACKLIGHT | LCD_RS;
+
+    HAL_I2C_Master_Transmit(&hi2c1, LCD_I2C_ADDR, data_t, 4, 100);
 }
 
 void lcd_init(void) {
-    // TODO: Gửi lần lượt các lệnh khởi tạo LCD (0x33, 0x32, 0x28, 0x0C, 0x01,...)
+    HAL_Delay(50);         
+
+    lcd_send_cmd(0x33);     
+    lcd_send_cmd(0x32);    
+    lcd_send_cmd(0x28);    
+    lcd_send_cmd(0x0C);    
+    lcd_send_cmd(0x06);     
+    lcd_send_cmd(0x01);     
+    HAL_Delay(2);          
 }
 
 void lcd_goto_xy(int row, int col) {
-    // TODO: Tính toán địa chỉ DDRAM dựa vào row và col, sau đó gọi lcd_send_cmd()
+    uint8_t addr;
+
+    switch (row) {
+        case 0:  addr = 0x00 + col; break;
+        case 1:  addr = 0x40 + col; break;
+        case 2:  addr = 0x14 + col; break;   
+        case 3:  addr = 0x54 + col; break;   
+        default: addr = 0x00 + col; break;
+    }
+
+    lcd_send_cmd(0x80 | addr);   
 }
 
 void lcd_send_string(char *str) {
-    // TODO: Dùng vòng lặp duyệt qua chuỗi str và gọi lcd_send_data() cho từng ký tự
+    while (*str) {
+        lcd_send_data(*str++);
+    }
 }
 
 void lcd_clear(void) {
-    // TODO: Gửi lệnh xóa màn hình (0x01) và delay ngắn để LCD kịp xử lý
+    lcd_send_cmd(0x01);
+    HAL_Delay(2);   
 }
